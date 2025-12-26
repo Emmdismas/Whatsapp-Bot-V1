@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: shulebot-app
+    env: node
+    plan: starter
+    region: frankfurt
+    repo: https://github.com/your/repo
+    branch: main
+    buildCommand: "npm install"
+    startCommand: "node src/index.js"
+    healthCheckPath: "/health"
+    autoDeploy: true
+
+    envVars:
+      - key: PORT
+        value: 3000
+      
+      - key: WHATSAPP_API_TOKEN
+        sync: false
+
+      - key: VERIFY_TOKEN
+        sync: false
+
+      - key: SCHOOL_API_URL
+        sync: false
+
+      - key: OPENAI_API_KEY
+        sync: false
+
+      - key: REDIS_HOST
+        value: "redis-shulebot"
+      - key: REDIS_PORT
+        value: "6379"
+
+  - type: redis
+    name: redis-shulebot
+    plan: starter
+    region: frankfurt
+    maxmemoryPolicy: allkeys-lru
