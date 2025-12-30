@@ -1,25 +1,9 @@
-// authFlow.js
-import { verifySchool, loginStudent, loginTeacher } from "./auth.js";
+import { loginStudent, loginTeacher } from "./auth.js";
 import { getSession, setSession } from "./session.js";
+import { studentMenu, teacherMenu } from "./menu.js";
 
 export async function startAuth(phone) {
     const s = await getSession(phone);
-    s.step = "ask_school";
-    await setSession(phone, s);
-
-    return "🏫 *Taja jina la shule*:\n\nMfano: *Kisutu Secondary*";
-}
-
-export async function handleSchool(phone, text) {
-    const s = await getSession(phone);
-    s.school = text.trim();
-
-    const res = await verifySchool(s.school).catch(() => null);
-
-    if (!res || !res.data?.exists) {
-        return "⚠️ Shule haijapatikana. Jaribu tena.";
-    }
-
     s.step = "ask_userid";
     await setSession(phone, s);
 
@@ -38,29 +22,41 @@ export async function handleUserId(phone, text) {
 
 export async function handlePassword(phone, text) {
     const s = await getSession(phone);
-    s.password = text.trim();
+    const password = text.trim();
 
-    // Try student login
-    let student = await loginStudent(s.userId, s.password).catch(() => null);
+    // Try student
+    const student = await loginStudent(s.userId, password).catch(() => null);
 
     if (student?.data?.success) {
+        s.step = "menu";
         s.role = "student";
         s.student_id = s.userId;
-        s.step = "menu";
+        s.school_id = student.data.school_id;
+        s.school_name = student.data.school_name;
+
         await setSession(phone, s);
-        return "✅ *Student login successful*\n\n" + studentMenu();
+
+        return `✅ *Karibu ${student.data.student_name}*\n🏫 ${s.school_name}\n\n${studentMenu()}`;
     }
 
-    // Try teacher login
-    let teacher = await loginTeacher(s.userId, s.password).catch(() => null);
+    // Try teacher
+    const teacher = await loginTeacher(s.userId, password).catch(() => null);
 
     if (teacher?.data?.success) {
+        s.step = "menu";
         s.role = "teacher";
         s.teacher_id = s.userId;
-        s.step = "menu";
+        s.school_id = teacher.data.school_id;
+        s.school_name = teacher.data.school_name;
+
         await setSession(phone, s);
-        return "✅ *Teacher login successful*\n\n" + teacherMenu();
+
+        return `✅ *Karibu Mwalimu ${teacher.data.teacher_name}*\n🏫 ${s.school_name}\n\n${teacherMenu()}`;
     }
 
-    return "❌ ID au Password sio sahihi. Jaribu tena.";
+    // Reset flow
+    s.step = "ask_userid";
+    await setSession(phone, s);
+
+    return "❌ ID au Password sio sahihi.\n\n🆔 Tafadhali tuma tena Student ID au Teacher ID:";
 }
