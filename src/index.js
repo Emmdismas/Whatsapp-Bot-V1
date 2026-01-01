@@ -5,7 +5,6 @@ import "./config.js";       // Loads env + config
 import { initRedis } from "./session.js";
 import router from "./router.js";
 import alertsRouter from "./internal/alerts.js";
-import express from "express";
 import bodyParser from "body-parser";
 import { internalWebhook } from "./internalWebhook.js";
 app.use(bodyParser.json());
