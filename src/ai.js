@@ -1,42 +1,6 @@
 import axios from "axios";
 import config from "./config.js";
 
-  
-export async function personalizedTeaching(student, weakSubjects) {
-    const system = `
-You are a Tanzanian secondary school teacher.
-Explain simply, with local examples.
-End with a short quiz (5 questions).
-`;
-
-    const userPrompt = `
-Student Name: ${student.name}
-Class: ${student.class}
-
-Weak subjects: ${weakSubjects.join(", ")}
-
-Teach step-by-step.
-`;
-
-    const res = await axios.post(
-        OPENAI_URL,
-        {
-            model: config.aiModel,
-            messages: [
-                { role: "system", content: system },
-                { role: "user", content: userPrompt }
-            ],
-            max_tokens: 1200,
-            temperature: 0.7
-        },
-        { headers: { Authorization: `Bearer ${config.openaiKey}` } }
-    );
-
-    return res.data.choices[0].message.content;
-}
-
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-
 /**
  * =========================
  * 1️⃣ AI TEACHER (TEXT ONLY)
