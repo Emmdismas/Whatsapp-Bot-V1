@@ -1,6 +1,6 @@
 // src/alerts/parentAlert.js
 import { detectWeaknesses } from "../logic/weakness.js";
-import { sendWhatsAppMessage } from "../whatsapp.js";
+import { sendWhatsAppMessage } from "../utils/whatsapp.js";
 
 export async function sendParentAlert(payload) {
     const {
