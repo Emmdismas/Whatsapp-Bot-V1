@@ -1,7 +1,6 @@
-// handlers/notices.js
 import { getNotices, downloadNotice } from "../api/shared.js";
 import { setSession } from "../session.js";
-import { sendText, sendDocument } from "../utils/whatsapp.js";
+import { sendWhatsAppMessage, sendDocument } from "../utils/whatsapp.js";
 
 export async function showNoticesList(phone, session) {
   const notices = await getNotices(
@@ -30,7 +29,7 @@ export async function showNoticesList(phone, session) {
 }
 
 export async function sendNotice(phone, session, text) {
-  const index = parseInt(text) - 1;
+  const index = parseInt(text, 10) - 1;
   const notice = session.notices?.[index];
 
   if (!notice) {
@@ -39,7 +38,7 @@ export async function sendNotice(phone, session, text) {
 
   // TEXT NOTICE
   if (notice.type === "text") {
-    await sendText(
+    await sendWhatsAppMessage(
       phone,
       `📢 *${notice.title}*\n\n${notice.content}`
     );
