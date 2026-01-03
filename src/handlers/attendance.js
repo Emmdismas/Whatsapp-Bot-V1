@@ -1,4 +1,3 @@
-// handlers/attendance.js
 import { getAttendanceSummary, getMonthlyAttendance } from "../api/student.js";
 import { setSession } from "../session.js";
 
@@ -17,16 +16,17 @@ export async function showAttendanceSummary(phone, session) {
 
   msg += `\n❓ Chagua namba ya mwezi kuona maelezo zaidi:`;
 
-  session.step = "select_attendance_month";
+  session.step = "attendance_month_select";
   session.attendanceMonths = data.months;
   await setSession(phone, session);
 
   return msg;
 }
 
-export async function handleMonthSelection(phone, session, text) {
-  const index = parseInt(text) - 1;
-  const month = session.attendanceMonths[index];
+// 🔴 HAPA NDIPO FIX IKO
+export async function handleAttendanceMonthSelection(phone, session, text) {
+  const index = parseInt(text, 10) - 1;
+  const month = session.attendanceMonths?.[index];
 
   if (!month) return "❌ Chaguo sio sahihi.";
 
