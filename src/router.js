@@ -20,7 +20,7 @@ import {
 } from "./handlers/attendance.js";
 
 // FEES
-import { showFeesStatus } from "./handlers/fees.js";
+import { showFeesSummary, showFeesDetails } from "./handlers/fees.js";
 
 // ASSIGNMENTS
 // ✅ correct
@@ -107,12 +107,24 @@ export async function handleIncoming({ from, text, type, raw }) {
   }
 
   // ---------------------------
-// NOTICES FLOW
-// ---------------------------
-if (session.step === "select_notice") {
-  return sendNotice(phone, session, text);
-}
+  // NOTICES FLOW
+  // ---------------------------
+  if (session.step === "select_notice") {
+    return sendNotice(phone, session, text);
+  }
 
+  // ---------------------------
+  // FEES FLOW
+  // ---------------------------
+  if (session.step === "view_fees_details") {
+    if (text?.toLowerCase() === "yes") {
+      return showFeesDetails(phone, session);
+    }
+
+    session.step = "menu";
+    await setSession(phone, session);
+    return "➡️ Umerudi kwenye menu.\n\n" + studentMenu();
+  }
 
   // ---------------------------
   // OCR SCAN EXAM FLOW
@@ -163,7 +175,9 @@ async function handleStudentMenu(cmd, session, phone) {
 
     // FEES
     case "3":
-      return showFeesStatus(phone, session);
+      session.step = "view_fees_summary";
+      await setSession(phone, session);
+      return showFeesSummary(phone, session);
 
     // QUIZ / AI LEARNING (handled elsewhere)
     case "4":
@@ -178,7 +192,6 @@ async function handleStudentMenu(cmd, session, phone) {
       return showAssignmentsList(phone, session);
 
     // NOTICES
-    case "6":
     case "6":
       session.step = "select_notice";
       await setSession(phone, session);
