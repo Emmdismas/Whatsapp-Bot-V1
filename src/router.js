@@ -33,7 +33,7 @@ import {
 import { showBooksList, sendBookFile } from "./handlers/books.js";
 
 // NOTICES
-import { sendNotices } from "./handlers/notices.js";
+import { showNoticesList, sendNotice } from "./handlers/notices.js";
 
 // OCR SCAN EXAM
 import { scanAndMarkExam } from "./ai.js";
@@ -107,6 +107,14 @@ export async function handleIncoming({ from, text, type, raw }) {
   }
 
   // ---------------------------
+// NOTICES FLOW
+// ---------------------------
+if (session.step === "select_notice") {
+  return sendNotice(phone, session, text);
+}
+
+
+  // ---------------------------
   // OCR SCAN EXAM FLOW
   // ---------------------------
   if (session.step === "await_exam_image" && type === "image") {
@@ -171,7 +179,10 @@ async function handleStudentMenu(cmd, session, phone) {
 
     // NOTICES
     case "6":
-      return sendNotices(phone, session);
+    case "6":
+      session.step = "select_notice";
+      await setSession(phone, session);
+      return showNoticesList(phone, session);
 
     // AI TEACHER
     case "7":
