@@ -1,10 +1,6 @@
 // src/router.js
 
-import {
-  startAuth,
-  handleUserId,
-  handlePassword
-} from "./authFlow.js";
+import { startAuth, handleUserId, handlePassword } from "./authFlow.js";
 
 import { studentMenu, teacherMenu } from "./menu.js";
 import { getSession, setSession } from "./session.js";
@@ -13,21 +9,25 @@ import { getSession, setSession } from "./session.js";
 import {
   showResultsMenu,
   handleExamSelection,
-  sendExamResults
+  sendExamResults,
 } from "./handlers/results.js";
 
 // ATTENDANCE
 import {
   showAttendanceSummary,
   handleAttendanceMonthSelection,
-  showMonthlyAttendance
+  showMonthlyAttendance,
 } from "./handlers/attendance.js";
 
 // FEES
 import { showFeesStatus } from "./handlers/fees.js";
 
 // ASSIGNMENTS
-import { sendAssignments } from "./handlers/assignments.js";
+// ✅ correct
+import {
+  showAssignmentsList,
+  sendAssignmentFile,
+} from "./handlers/assignments.js";
 
 // BOOKS
 import { sendBooks } from "./handlers/books.js";
@@ -93,6 +93,13 @@ export async function handleIncoming({ from, text, type, raw }) {
   }
 
   // ---------------------------
+  // ASSIGNMENTS FLOW
+  // ---------------------------
+  if (session.step === "select_assignment") {
+    return sendAssignmentFile(phone, session, text);
+  }
+
+  // ---------------------------
   // OCR SCAN EXAM FLOW
   // ---------------------------
   if (session.step === "await_exam_image" && type === "image") {
@@ -110,7 +117,10 @@ export async function handleIncoming({ from, text, type, raw }) {
       return sendText(phone, result);
     } catch (err) {
       console.error(err);
-      return sendText(phone, "❌ Tatizo limetokea kusoma mtihani. Jaribu tena.");
+      return sendText(
+        phone,
+        "❌ Tatizo limetokea kusoma mtihani. Jaribu tena."
+      );
     }
   }
 
@@ -148,7 +158,9 @@ async function handleStudentMenu(cmd, session, phone) {
 
     // ASSIGNMENTS
     case "5":
-      return sendAssignments(phone, session);
+      session.step = "select_assignment";
+      await setSession(phone, session);
+      return showAssignmentsList(phone, session);
 
     // NOTICES
     case "6":
