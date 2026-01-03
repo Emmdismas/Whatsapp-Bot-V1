@@ -30,7 +30,7 @@ import {
 } from "./handlers/assignments.js";
 
 // BOOKS
-import { sendBooks } from "./handlers/books.js";
+import { showBooksList, sendBookFile } from "./handlers/books.js";
 
 // NOTICES
 import { sendNotices } from "./handlers/notices.js";
@@ -97,6 +97,13 @@ export async function handleIncoming({ from, text, type, raw }) {
   // ---------------------------
   if (session.step === "select_assignment") {
     return sendAssignmentFile(phone, session, text);
+  }
+
+  // ---------------------------
+  // BOOKS FLOW
+  // ---------------------------
+  if (session.step === "select_book") {
+    return sendBookFile(phone, session, text);
   }
 
   // ---------------------------
@@ -174,7 +181,9 @@ async function handleStudentMenu(cmd, session, phone) {
 
     // BOOKS
     case "8":
-      return sendBooks(phone, session);
+      session.step = "select_book";
+      await setSession(phone, session);
+      return showBooksList(phone, session);
 
     // SCAN EXAM
     case "9":
