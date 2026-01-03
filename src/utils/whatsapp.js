@@ -8,9 +8,7 @@ export async function sendWhatsAppMessage(to, message) {
       messaging_product: "whatsapp",
       to,
       type: "text",
-      text: {
-        body: message
-      }
+      text: { body: message }
     },
     {
       headers: {
@@ -21,6 +19,10 @@ export async function sendWhatsAppMessage(to, message) {
   );
 }
 
+export async function sendText(to, message) {
+  return sendWhatsAppMessage(to, message);
+}
+
 export async function sendDocument(to, url, filename, caption = "") {
   return axios.post(
     `https://graph.facebook.com/v19.0/${config.phoneNumberId}/messages`,
@@ -28,11 +30,7 @@ export async function sendDocument(to, url, filename, caption = "") {
       messaging_product: "whatsapp",
       to,
       type: "document",
-      document: {
-        link: url,
-        filename,
-        caption
-      }
+      document: { link: url, filename, caption }
     },
     {
       headers: {
