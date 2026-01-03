@@ -1,7 +1,7 @@
 import axios from "axios";
 import { API_BASE } from "./utils.js";
 
-
+/* ===================== RESULTS ===================== */
 export async function getStudentExams(studentId) {
   const res = await axios.get(
     `${API_BASE}/students/${studentId}/exams`
@@ -16,21 +16,7 @@ export async function getExamResults(studentId, examId) {
   return res.data;
 }
 
-
-/* RESULTS */
-export async function getStudentExams(studentId) {
-  const res = await axios.get(`${API_BASE}/students/${studentId}/exams`);
-  return res.data || [];
-}
-
-export async function getExamResults(studentId, examId) {
-  const res = await axios.get(
-    `${API_BASE}/students/${studentId}/results/${examId}`
-  );
-  return res.data;
-}
-
-/* ATTENDANCE */
+/* ===================== ATTENDANCE ===================== */
 export async function getAttendanceSummary(studentId) {
   const res = await axios.get(
     `${API_BASE}/attendance/${studentId}/summary`
@@ -45,8 +31,7 @@ export async function getMonthlyAttendance(studentId, month) {
   return res.data;
 }
 
-
-// FEES
+/* ===================== FEES ===================== */
 export async function getFeesSummary(studentId) {
   const res = await axios.get(
     `${API_BASE}/students/${studentId}/fees/summary`
@@ -61,7 +46,7 @@ export async function getFeesDetails(studentId) {
   return res.data;
 }
 
-// ASSIGNMENTS
+/* ===================== ASSIGNMENTS ===================== */
 export async function getAssignments(studentId) {
   const res = await axios.get(
     `${API_BASE}/students/${studentId}/assignments`
