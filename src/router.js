@@ -2,7 +2,6 @@
 
 import {
   startAuth,
-  handleSchool,
   handleUserId,
   handlePassword
 } from "./authFlow.js";
@@ -57,7 +56,6 @@ export async function handleIncoming({ from, text, type, raw }) {
   // ---------------------------
   // AUTH FLOW
   // ---------------------------
-  if (session.step === "ask_school") return handleSchool(phone, text);
   if (session.step === "ask_userid") return handleUserId(phone, text);
   if (session.step === "ask_password") return handlePassword(phone, text);
 

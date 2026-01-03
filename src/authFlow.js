@@ -1,62 +1,55 @@
+// src/authFlow.js
 import { loginStudent, loginTeacher } from "./auth.js";
-import { getSession, setSession } from "./session.js";
-import { studentMenu, teacherMenu } from "./menu.js";
+import { setSession } from "./session.js";
 
 export async function startAuth(phone) {
-    const s = await getSession(phone);
-    s.step = "ask_userid";
-    await setSession(phone, s);
+  await setSession(phone, {
+    step: "ask_userid"
+  });
 
-    return "🆔 *Tuma Student ID au Teacher ID*";
+  return "👤 Tuma USER ID yako:";
 }
 
 export async function handleUserId(phone, text) {
-    const s = await getSession(phone);
-    s.userId = text.trim();
+  const session = {
+    step: "ask_password",
+    user_id: text.trim()
+  };
 
-    s.step = "ask_password";
-    await setSession(phone, s);
-
-    return "🔑 *Tuma password*";
+  await setSession(phone, session);
+  return "🔐 Tuma PASSWORD yako:";
 }
 
 export async function handlePassword(phone, text) {
-    const s = await getSession(phone);
-    const password = text.trim();
+  const session = await import("./session.js").then(m => m.getSession(phone));
 
-    // Try student
-    const student = await loginStudent(s.userId, password).catch(() => null);
+  try {
+    // jaribu student kwanza
+    const res = await loginStudent(session.user_id, text.trim());
 
-    if (student?.data?.success) {
-        s.step = "menu";
-        s.role = "student";
-        s.student_id = s.userId;
-        s.school_id = student.data.school_id;
-        s.school_name = student.data.school_name;
+    await setSession(phone, {
+      step: "menu",
+      role: "student",
+      student_id: res.data.student.id,
+      school_id: res.data.student.school_id
+    });
 
-        await setSession(phone, s);
+    return "✅ Login successful\n\n" + (await import("./menu.js")).studentMenu();
+  } catch {
+    // kama sio student, jaribu teacher
+    try {
+      const res = await loginTeacher(session.user_id, text.trim());
 
-        return `✅ *Karibu ${student.data.student_name}*\n🏫 ${s.school_name}\n\n${studentMenu()}`;
+      await setSession(phone, {
+        step: "menu",
+        role: "teacher",
+        teacher_id: res.data.teacher.id,
+        school_id: res.data.teacher.school_id
+      });
+
+      return "✅ Login successful\n\n" + (await import("./menu.js")).teacherMenu();
+    } catch {
+      return "❌ USER ID au PASSWORD sio sahihi.";
     }
-
-    // Try teacher
-    const teacher = await loginTeacher(s.userId, password).catch(() => null);
-
-    if (teacher?.data?.success) {
-        s.step = "menu";
-        s.role = "teacher";
-        s.teacher_id = s.userId;
-        s.school_id = teacher.data.school_id;
-        s.school_name = teacher.data.school_name;
-
-        await setSession(phone, s);
-
-        return `✅ *Karibu Mwalimu ${teacher.data.teacher_name}*\n🏫 ${s.school_name}\n\n${teacherMenu()}`;
-    }
-
-    // Reset flow
-    s.step = "ask_userid";
-    await setSession(phone, s);
-
-    return "❌ ID au Password sio sahihi.\n\n🆔 Tafadhali tuma tena Student ID au Teacher ID:";
+  }
 }
