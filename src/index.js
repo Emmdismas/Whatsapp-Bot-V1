@@ -6,7 +6,7 @@ import "./config.js";          // loads env
 import "./session.js";         // initializes Redis
 
 import { handleIncoming } from "./router.js";
-import { sendText } from "./utils/sendText.js";
+import { sendText } from "./utils/whatsapp.js";
 
 import alertsRouter from "./internal/alerts.js";
 import { internalWebhook } from "./internalWebhook.js";
