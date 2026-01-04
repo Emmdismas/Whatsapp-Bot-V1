@@ -1,7 +1,5 @@
 // src/router.js
-
-import { startAuth, handleUserId, handlePassword } from "./authFlow.js";
-
+import { startAuth, handleIdentity, handlePassword } from "./authFlow.js";
 import { studentMenu, teacherMenu } from "./menu.js";
 import { getSession, setSession } from "./session.js";
 
@@ -16,14 +14,12 @@ import {
 import {
   showAttendanceSummary,
   handleAttendanceMonthSelection,
-  showMonthlyAttendance,
 } from "./handlers/attendance.js";
 
 // FEES
 import { showFeesSummary, showFeesDetails } from "./handlers/fees.js";
 
 // ASSIGNMENTS
-// ✅ correct
 import {
   showAssignmentsList,
   sendAssignmentFile,
@@ -35,45 +31,29 @@ import { showBooksList, sendBookFile } from "./handlers/books.js";
 // NOTICES
 import { showNoticesList, sendNotice } from "./handlers/notices.js";
 
-// OCR SCAN EXAM
+// OCR
 import { scanAndMarkExam } from "./ai.js";
 import { getMediaUrl } from "./utils/media.js";
 
-/**
- * MAIN ENTRY POINT
- */
 export async function handleIncoming({ from, text, type, raw }) {
   const phone = from;
 
-  // ============================
-  // 1. ENSURE SESSION EXISTS
-  // ============================
+  // 1. SESSION
   let session = await getSession(phone);
-
   if (!session) {
-    session = {
-      step: "ask_userid",
-      role: null,
-      data: {}
-    };
-    await setSession(phone, session);
     return startAuth(phone);
   }
 
-  // ============================
   // 2. AUTH FLOW
-  // ============================
   if (session.step === "ask_userid") {
-    return handleUserId(phone, text);
+    return handleIdentity(phone, text);
   }
 
   if (session.step === "ask_password") {
     return handlePassword(phone, text);
   }
 
-  // ============================
-  // 3. MAIN MENU
-  // ============================
+  // 3. MENU
   if (session.step === "menu") {
     const cmd = text?.trim();
 
@@ -85,13 +65,10 @@ export async function handleIncoming({ from, text, type, raw }) {
       return handleTeacherMenu(cmd, session, phone);
     }
 
-    // fallback
     return "⚠️ Tafadhali chagua chaguo sahihi.";
   }
 
-  // ============================
-  // 4. RESULTS FLOW
-  // ============================
+  // RESULTS
   if (session.step === "select_exam") {
     return handleExamSelection(phone, session, text);
   }
@@ -100,37 +77,27 @@ export async function handleIncoming({ from, text, type, raw }) {
     return sendExamResults(phone, session, text);
   }
 
-  // ============================
-  // 5. ATTENDANCE FLOW
-  // ============================
+  // ATTENDANCE
   if (session.step === "attendance_month_select") {
     return handleAttendanceMonthSelection(phone, session, text);
   }
 
-  // ============================
-  // 6. ASSIGNMENTS FLOW
-  // ============================
+  // ASSIGNMENTS
   if (session.step === "select_assignment") {
     return sendAssignmentFile(phone, session, text);
   }
 
-  // ============================
-  // 7. BOOKS FLOW
-  // ============================
+  // BOOKS
   if (session.step === "select_book") {
     return sendBookFile(phone, session, text);
   }
 
-  // ============================
-  // 8. NOTICES FLOW
-  // ============================
+  // NOTICES
   if (session.step === "select_notice") {
     return sendNotice(phone, session, text);
   }
 
-  // ============================
-  // 9. FEES FLOW
-  // ============================
+  // FEES
   if (session.step === "view_fees_details") {
     if (text?.toLowerCase() === "yes") {
       return showFeesDetails(phone, session);
@@ -141,9 +108,7 @@ export async function handleIncoming({ from, text, type, raw }) {
     return "➡️ Umerudi kwenye menu.\n\n" + studentMenu();
   }
 
-  // ============================
-  // 10. OCR SCAN FLOW
-  // ============================
+  // OCR
   if (session.step === "await_exam_image") {
     if (type !== "image") {
       return "📸 Tafadhali tuma picha ya mtihani.";
@@ -162,15 +127,12 @@ export async function handleIncoming({ from, text, type, raw }) {
       await setSession(phone, session);
 
       return result;
-    } catch (err) {
-      console.error("OCR error:", err);
+    } catch {
       return "❌ Imeshindikana kusoma mtihani. Jaribu tena.";
     }
   }
 
-  // ============================
-  // 11. FALLBACK (SAFE EXIT)
-  // ============================
+  // FALLBACK
   session.step = "menu";
   await setSession(phone, session);
   return "⚠️ Chaguo halijatambuliwa.\n\n" + studentMenu();
