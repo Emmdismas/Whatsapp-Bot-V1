@@ -1,8 +1,17 @@
-import { findStudentByNameOrUsername, loginStudent } from "./auth.js";
+// src/authFlow.js
+import {
+  findStudentByNameOrUsername,
+  loginStudent
+} from "./auth.js";
+
 import { setSession, getSession } from "./session.js";
 import { studentMenu } from "./menu.js";
 
-/* STEP 1: INTRO */
+/**
+ * ======================
+ * STEP 1: INTRO
+ * ======================
+ */
 export async function startAuth(phone) {
   await setSession(phone, {
     step: "ask_identity"
@@ -16,7 +25,11 @@ export async function startAuth(phone) {
   );
 }
 
-/* STEP 2: CHECK NAME / USERNAME */
+/**
+ * ======================
+ * STEP 2: CHECK IDENTITY
+ * ======================
+ */
 export async function handleIdentity(phone, text) {
   const identity = text.trim().toUpperCase();
 
@@ -29,17 +42,26 @@ export async function handleIdentity(phone, text) {
     );
   }
 
+  // ✅ HAPA NDO KILA KITU KINAWEKWA SAWA
   await setSession(phone, {
     step: "ask_password",
     student_id: student.id,
     student_name: student.full_name,
-    username: student.username
+    username: student.username,
+    school_id: student.school_id
   });
 
-  return "🔐 Tafadhari tuma PASSWORD ya akaunti hii:";
+  return (
+    `🔐 Tafadhari tuma PASSWORD ya akaunti ya\n` +
+    `*${student.full_name}*`
+  );
 }
 
-/* STEP 3: PASSWORD CHECK */
+/**
+ * ======================
+ * STEP 3: PASSWORD CHECK
+ * ======================
+ */
 export async function handlePassword(phone, text) {
   const session = await getSession(phone);
 
@@ -48,7 +70,9 @@ export async function handlePassword(phone, text) {
 
     await setSession(phone, {
       step: "menu",
+      role: "parent",
       student_id: session.student_id,
+      student_name: session.student_name,
       school_id: session.school_id
     });
 
