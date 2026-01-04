@@ -44,24 +44,36 @@ import { getMediaUrl } from "./utils/media.js";
  */
 export async function handleIncoming({ from, text, type, raw }) {
   const phone = from;
+
+  // ============================
+  // 1. ENSURE SESSION EXISTS
+  // ============================
   let session = await getSession(phone);
 
-  // ---------------------------
-  // 0: START AUTH
-  // ---------------------------
-  if (!session.step) {
+  if (!session) {
+    session = {
+      step: "ask_userid",
+      role: null,
+      data: {}
+    };
+    await setSession(phone, session);
     return startAuth(phone);
   }
 
-  // ---------------------------
-  // AUTH FLOW
-  // ---------------------------
-  if (session.step === "ask_userid") return handleUserId(phone, text);
-  if (session.step === "ask_password") return handlePassword(phone, text);
+  // ============================
+  // 2. AUTH FLOW
+  // ============================
+  if (session.step === "ask_userid") {
+    return handleUserId(phone, text);
+  }
 
-  // ---------------------------
-  // MAIN MENU
-  // ---------------------------
+  if (session.step === "ask_password") {
+    return handlePassword(phone, text);
+  }
+
+  // ============================
+  // 3. MAIN MENU
+  // ============================
   if (session.step === "menu") {
     const cmd = text?.trim();
 
@@ -72,11 +84,14 @@ export async function handleIncoming({ from, text, type, raw }) {
     if (session.role === "teacher") {
       return handleTeacherMenu(cmd, session, phone);
     }
+
+    // fallback
+    return "⚠️ Tafadhali chagua chaguo sahihi.";
   }
 
-  // ---------------------------
-  // RESULTS FLOW
-  // ---------------------------
+  // ============================
+  // 4. RESULTS FLOW
+  // ============================
   if (session.step === "select_exam") {
     return handleExamSelection(phone, session, text);
   }
@@ -85,37 +100,37 @@ export async function handleIncoming({ from, text, type, raw }) {
     return sendExamResults(phone, session, text);
   }
 
-  // ---------------------------
-  // ATTENDANCE FLOW
-  // ---------------------------
+  // ============================
+  // 5. ATTENDANCE FLOW
+  // ============================
   if (session.step === "attendance_month_select") {
     return handleAttendanceMonthSelection(phone, session, text);
   }
 
-  // ---------------------------
-  // ASSIGNMENTS FLOW
-  // ---------------------------
+  // ============================
+  // 6. ASSIGNMENTS FLOW
+  // ============================
   if (session.step === "select_assignment") {
     return sendAssignmentFile(phone, session, text);
   }
 
-  // ---------------------------
-  // BOOKS FLOW
-  // ---------------------------
+  // ============================
+  // 7. BOOKS FLOW
+  // ============================
   if (session.step === "select_book") {
     return sendBookFile(phone, session, text);
   }
 
-  // ---------------------------
-  // NOTICES FLOW
-  // ---------------------------
+  // ============================
+  // 8. NOTICES FLOW
+  // ============================
   if (session.step === "select_notice") {
     return sendNotice(phone, session, text);
   }
 
-  // ---------------------------
-  // FEES FLOW
-  // ---------------------------
+  // ============================
+  // 9. FEES FLOW
+  // ============================
   if (session.step === "view_fees_details") {
     if (text?.toLowerCase() === "yes") {
       return showFeesDetails(phone, session);
@@ -126,33 +141,41 @@ export async function handleIncoming({ from, text, type, raw }) {
     return "➡️ Umerudi kwenye menu.\n\n" + studentMenu();
   }
 
-  // ---------------------------
-  // OCR SCAN EXAM FLOW
-  // ---------------------------
-  if (session.step === "await_exam_image" && type === "image") {
+  // ============================
+  // 10. OCR SCAN FLOW
+  // ============================
+  if (session.step === "await_exam_image") {
+    if (type !== "image") {
+      return "📸 Tafadhali tuma picha ya mtihani.";
+    }
+
     try {
       const mediaId = raw.image?.id;
       const imageUrl = await getMediaUrl(mediaId);
 
-      await sendText(phone, "⏳ Ninasoma mtihani, tafadhali subiri...");
+      session.step = "processing_exam";
+      await setSession(phone, session);
 
       const result = await scanAndMarkExam(imageUrl);
 
       session.step = "menu";
       await setSession(phone, session);
 
-      return sendText(phone, result);
+      return result;
     } catch (err) {
-      console.error(err);
-      return sendText(
-        phone,
-        "❌ Tatizo limetokea kusoma mtihani. Jaribu tena."
-      );
+      console.error("OCR error:", err);
+      return "❌ Imeshindikana kusoma mtihani. Jaribu tena.";
     }
   }
 
-  return "⚠️ Tafadhali chagua huduma sahihi kutoka kwenye menu.";
+  // ============================
+  // 11. FALLBACK (SAFE EXIT)
+  // ============================
+  session.step = "menu";
+  await setSession(phone, session);
+  return "⚠️ Chaguo halijatambuliwa.\n\n" + studentMenu();
 }
+
 
 /**
  * =============================
