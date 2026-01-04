@@ -1,55 +1,65 @@
-// src/authFlow.js
-import { loginStudent, loginTeacher } from "./auth.js";
-import { setSession } from "./session.js";
+import { findStudentByNameOrUsername, loginStudent } from "./auth.js";
+import { setSession, getSession } from "./session.js";
+import { studentMenu } from "./menu.js";
 
+/* STEP 1: INTRO */
 export async function startAuth(phone) {
   await setSession(phone, {
-    step: "ask_userid"
+    step: "ask_identity"
   });
 
-  return "👤 Tuma USER ID yako:";
+  return (
+    "👋 Karibu Smart School System\n\n" +
+    "Tafadhari tuma *JINA KAMILI* la mwanafunzi\n" +
+    "(mf. EMMANUEL DISMAS ABDALLAH)\n" +
+    "au *USERNAME* kama unaijua."
+  );
 }
 
-export async function handleUserId(phone, text) {
-  const session = {
+/* STEP 2: CHECK NAME / USERNAME */
+export async function handleIdentity(phone, text) {
+  const identity = text.trim().toUpperCase();
+
+  const student = await findStudentByNameOrUsername(identity);
+
+  if (!student) {
+    return (
+      "❌ Samahani, mwanafunzi huyu hapatikani.\n" +
+      "Tafadhari hakiki jina au tuma USERNAME sahihi."
+    );
+  }
+
+  await setSession(phone, {
     step: "ask_password",
-    user_id: text.trim()
-  };
+    student_id: student.id,
+    student_name: student.full_name,
+    username: student.username
+  });
 
-  await setSession(phone, session);
-  return "🔐 Tuma PASSWORD yako:";
+  return "🔐 Tafadhari tuma PASSWORD ya akaunti hii:";
 }
 
+/* STEP 3: PASSWORD CHECK */
 export async function handlePassword(phone, text) {
-  const session = await import("./session.js").then(m => m.getSession(phone));
+  const session = await getSession(phone);
 
   try {
-    // jaribu student kwanza
-    const res = await loginStudent(session.user_id, text.trim());
+    await loginStudent(session.username, text.trim());
 
     await setSession(phone, {
       step: "menu",
-      role: "student",
-      student_id: res.data.student.id,
-      school_id: res.data.student.school_id
+      student_id: session.student_id,
+      school_id: session.school_id
     });
 
-    return "✅ Login successful\n\n" + (await import("./menu.js")).studentMenu();
+    return (
+      `✅ Karibu mzazi wa *${session.student_name}*\n\n` +
+      studentMenu()
+    );
   } catch {
-    // kama sio student, jaribu teacher
-    try {
-      const res = await loginTeacher(session.user_id, text.trim());
-
-      await setSession(phone, {
-        step: "menu",
-        role: "teacher",
-        teacher_id: res.data.teacher.id,
-        school_id: res.data.teacher.school_id
-      });
-
-      return "✅ Login successful\n\n" + (await import("./menu.js")).teacherMenu();
-    } catch {
-      return "❌ USER ID au PASSWORD sio sahihi.";
-    }
+    return (
+      "❌ Password sio sahihi.\n" +
+      "Tafadhari jaribu tena."
+    );
   }
 }
