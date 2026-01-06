@@ -132,10 +132,25 @@ export async function handleIncoming({ from, text, type, raw }) {
     }
   }
 
-  // FALLBACK
-  session.step = "menu";
-  await setSession(phone, session);
-  return "⚠️ Chaguo halijatambuliwa.\n\n" + studentMenu();
+ // ============================
+// FALLBACK (SAFE)
+// ============================
+if (session.step === "ask_userid") {
+  return (
+    "❌ Jina au username haijatambuliwa.\n" +
+    "Tafadhali tuma *JINA KAMILI* la mwanafunzi tena."
+  );
+}
+
+if (session.step === "ask_password") {
+  return "🔐 Tafadhali tuma PASSWORD sahihi ya akaunti.";
+}
+
+// Only fallback to menu IF already authenticated
+session.step = "menu";
+await setSession(phone, session);
+return "⚠️ Chaguo halijatambuliwa.\n\n" + studentMenu();
+
 }
 
 
